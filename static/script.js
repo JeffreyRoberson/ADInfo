@@ -19,6 +19,14 @@ class TableManager {
         if (this.searchInput) {
             this.searchInput.addEventListener('keyup', () => this.handleSearch());
         }
+
+        // Add click handler for computer rows
+        if (this.table.id === 'computersTable') {
+            this.allRows.forEach(row => {
+                row.addEventListener('click', (e) => this.handleComputerRowClick(e));
+                row.style.cursor = 'pointer';
+            });
+        }
     }
 
     handleSort(event) {
@@ -92,6 +100,132 @@ class TableManager {
         if (showingElement) showingElement.textContent = visibleCount;
         if (totalElement) totalElement.textContent = this.allRows.length;
     }
+
+    handleComputerRowClick(e) {
+        // Don't trigger on header click
+        if (e.target.closest('.sortable-header')) return;
+
+        const row = e.currentTarget;
+        const computerName = row.getAttribute('data-computer-name');
+        
+        // Show ping status modal
+        showPingModal(computerName);
+    }
+}
+
+function showPingModal(computerName) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('pingModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'pingModal';
+    modal.className = 'ping-modal';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'ping-modal-content';
+    
+    const header = document.createElement('div');
+    header.className = 'ping-modal-header';
+    
+    const title = document.createElement('h3');
+    title.textContent = `Ping Status: ${computerName}`;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'ping-close-btn';
+    closeBtn.textContent = '✕';
+    closeBtn.onclick = () => modal.remove();
+    
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    
+    const body = document.createElement('div');
+    body.className = 'ping-modal-body';
+    body.innerHTML = '<p class="ping-loading">🔄 Checking host status...</p>';
+    
+    modalContent.appendChild(header);
+    modalContent.appendChild(body);
+    modal.appendChild(modalContent);
+    
+    // Click outside modal to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    document.body.appendChild(modal);
+    
+    // Fetch ping status
+    fetchPingStatus(computerName, body);
+}
+
+function fetchPingStatus(computerName, bodyElement) {
+    fetch(`/api/ping?hostname=${encodeURIComponent(computerName)}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            displayPingResult(bodyElement, data);
+        } else {
+            displayPingError(bodyElement, data.error || 'Unknown error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Ping error:', error);
+        displayPingError(bodyElement, error.message);
+    });
+}
+
+function displayPingResult(bodyElement, data) {
+    const isOnline = data.online || data.status === 'online';
+    const statusClass = isOnline ? 'ping-status-online' : 'ping-status-offline';
+    const statusIcon = isOnline ? '✓' : '✗';
+    const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
+    
+    bodyElement.innerHTML = `
+        <div class="ping-result">
+            <div class="ping-status ${statusClass}">
+                <span class="ping-icon">${statusIcon}</span>
+                <span class="ping-text">${statusText}</span>
+            </div>
+            <div class="ping-details">
+                <p><strong>Hostname:</strong> ${escapeHtml(data.hostname)}</p>
+            </div>
+            <div class="ping-timestamp">
+                <small>Checked at: ${new Date().toLocaleTimeString()}</small>
+            </div>
+        </div>
+    `;
+}
+
+function displayPingError(bodyElement, errorMessage) {
+    bodyElement.innerHTML = `
+        <div class="ping-error">
+            <p class="ping-error-icon">⚠️</p>
+            <p class="ping-error-message"><strong>Error:</strong> ${escapeHtml(errorMessage)}</p>
+            <small>Unable to determine host status</small>
+        </div>
+    `;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
