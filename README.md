@@ -8,3 +8,4 @@ The user tab will display all users accounts in Active Directory.  The columns a
 
 Under the computers tab, it will show the computer name, OS, last login and days since last login.  This feature will help to show what comptuer accounts are not in use and help with removal of removed computers.
 
+Configuration is in config.php.  A user account should be setup with out any group membership.  It will only need to read attributes in AD. 
