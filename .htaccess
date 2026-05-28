@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Don't rewrite actual files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Don't rewrite api calls
+    RewriteCond %{REQUEST_URI} !^/api/
+    
+    # Pass all other requests to index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
