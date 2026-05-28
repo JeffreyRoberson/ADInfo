@@ -131,7 +131,8 @@ class ADHelper {
             return false;
         }
 
-        $uac = intval($userAccountControl[0]);
+        // Handle both array and direct value
+        $uac = is_array($userAccountControl) ? intval($userAccountControl[0]) : intval($userAccountControl);
         // Check DONT_EXPIRE_PASSWORD flag (bit 16 = 0x10000)
         return ($uac & 65536) == 65536;
     }
@@ -319,7 +320,8 @@ class ADHelper {
             return false;
         }
 
-        $uac = intval($userAccountControl[0]);
+        // Handle both array and direct value
+        $uac = is_array($userAccountControl) ? intval($userAccountControl[0]) : intval($userAccountControl);
         // Check ACCOUNTDISABLE flag (bit 1 = 0x0002)
         return ($uac & 2) == 2;
     }
