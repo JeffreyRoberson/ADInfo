@@ -5,9 +5,6 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     
-    # Don't rewrite api calls
-    RewriteCond %{REQUEST_URI} !^/api/
-    
-    # Pass all other requests to index.php
+    # Pass all requests (including api calls) to index.php
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
