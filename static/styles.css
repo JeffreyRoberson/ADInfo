@@ -380,6 +380,10 @@ header h1 {
     transition: background-color 0.2s ease;
 }
 
+#computersTable tbody tr {
+    cursor: pointer;
+}
+
 .data-table tbody tr:hover {
     background-color: rgba(36, 82, 206, 0.05);
 }
@@ -517,6 +521,184 @@ a:active {
     text-decoration: underline;
 }
 
+/* Ping Modal Styles */
+.ping-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.ping-modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 450px;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.ping-modal-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ping-modal-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+
+.ping-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.ping-close-btn:hover {
+    opacity: 0.8;
+}
+
+.ping-modal-body {
+    padding: 30px;
+}
+
+.ping-loading {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 1.1em;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ping-result {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ping-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ping-status-online {
+    background: rgba(39, 174, 96, 0.2);
+    color: var(--success-color);
+}
+
+.ping-status-offline {
+    background: rgba(231, 76, 60, 0.2);
+    color: var(--danger-color);
+}
+
+.ping-icon {
+    font-size: 1.8em;
+}
+
+.ping-text {
+    letter-spacing: 1px;
+}
+
+.ping-details {
+    background: var(--light-bg);
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.ping-details p {
+    margin: 0;
+    color: #333;
+    font-size: 0.95em;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ping-details strong {
+    color: var(--primary-color);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ping-timestamp {
+    text-align: center;
+    color: #999;
+    font-size: 0.85em;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ping-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    text-align: center;
+}
+
+.ping-error-icon {
+    font-size: 2.5em;
+    margin: 0;
+}
+
+.ping-error-message {
+    color: var(--danger-color);
+    font-size: 0.95em;
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ping-error small {
+    color: #999;
+    font-family: 'DM Sans', sans-serif;
+}
+
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.8em;
@@ -578,6 +760,11 @@ a:active {
 
     .numeric-header .sort-indicator {
         right: 15px;
+    }
+
+    .ping-modal-content {
+        width: 95%;
+        max-width: 400px;
     }
 }
 
@@ -681,6 +868,28 @@ a:active {
         font-size: 0.8em;
         padding: 10px;
     }
+
+    .ping-modal-content {
+        width: 95%;
+        max-width: 300px;
+    }
+
+    .ping-modal-header h3 {
+        font-size: 1em;
+    }
+
+    .ping-modal-body {
+        padding: 15px;
+    }
+
+    .ping-status {
+        padding: 15px;
+        font-size: 0.95em;
+    }
+
+    .ping-icon {
+        font-size: 1.5em;
+    }
 }
 
 @media print {
@@ -701,7 +910,8 @@ a:active {
 
     .tabs,
     .filter-search,
-    footer {
+    footer,
+    .ping-modal {
         display: none;
     }
 
