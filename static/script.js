@@ -101,6 +101,19 @@ class TableManager {
 class PingManager {
     constructor() {
         this.computerRows = new Map();
+        this.basePath = this.getBasePath();
+    }
+
+    getBasePath() {
+        // Get the pathname and extract the base directory
+        const pathname = window.location.pathname;
+        console.log(`[PingManager] Full pathname: ${pathname}`);
+        
+        // If pathname is /adinfo/index.php or /adinfo/, we want /adinfo/
+        const match = pathname.match(/^(.*?\/adinfo\/)/) || pathname.match(/^(.*?\/[^/]+\/?)$/);
+        const basePath = match ? match[1] : '/';
+        console.log(`[PingManager] Base path: ${basePath}`);
+        return basePath;
     }
 
     init() {
@@ -137,8 +150,8 @@ class PingManager {
             return;
         }
 
-        // Use relative path from current location
-        const apiUrl = `api/ping?hostname=${encodeURIComponent(computerName)}`;
+        // Build API URL using base path
+        const apiUrl = `${this.basePath}api/ping?hostname=${encodeURIComponent(computerName)}`;
         console.log(`[PingManager] Pinging ${computerName} at ${apiUrl}`);
 
         fetch(apiUrl, {
