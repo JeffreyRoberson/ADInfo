@@ -116,6 +116,8 @@ class PingManager {
             }
         });
 
+        console.log(`[PingManager] Initialized with ${this.computerRows.size} computers`);
+
         // Start pinging all computers
         this.pingAllComputers();
     }
@@ -130,9 +132,16 @@ class PingManager {
 
     pingHost(computerName, row) {
         const statusCell = row.querySelector('.host-status-cell');
-        if (!statusCell) return;
+        if (!statusCell) {
+            console.warn(`[PingManager] No status cell found for ${computerName}`);
+            return;
+        }
 
-        fetch(`/api/ping?hostname=${encodeURIComponent(computerName)}`, {
+        // Use relative path from current location
+        const apiUrl = `api/ping?hostname=${encodeURIComponent(computerName)}`;
+        console.log(`[PingManager] Pinging ${computerName} at ${apiUrl}`);
+
+        fetch(apiUrl, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -140,14 +149,20 @@ class PingManager {
             }
         })
         .then(response => {
+            console.log(`[PingManager] Response status for ${computerName}: ${response.status}`);
+            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
             console.log(`[PingManager] Ping result for ${computerName}:`, data);
-            this.updateStatusDisplay(row, statusCell, data);
+            if (data.success) {
+                this.updateStatusDisplay(row, statusCell, data);
+            } else {
+                this.updateStatusError(row, statusCell, data.error || 'Ping failed');
+            }
         })
         .catch(error => {
             console.error(`[PingManager] Ping error for ${computerName}:`, error);
