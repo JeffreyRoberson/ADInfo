@@ -11,11 +11,16 @@ require_once 'includes/Logger.php';
 
 $logger = new Logger();
 
-// Check if this is an API request FIRST
-$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+// Get the request URI - handle both direct requests and rewritten requests
+$requestUri = $_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'] ?? '';
+if (!$requestUri && isset($_SERVER['QUERY_STRING'])) {
+    $requestUri = '/' . trim($_SERVER['QUERY_STRING'], '/');
+}
+
+$logger->debug('Request URI: ' . $requestUri);
 
 // Check for detailed ping API calls
-if (preg_match('/api\/ping-detailed/i', $requestUri)) {
+if (preg_match('/api[\/\-]?ping[\/\-]?detailed/i', $requestUri)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     
@@ -47,7 +52,7 @@ if (preg_match('/api\/ping-detailed/i', $requestUri)) {
 }
 
 // Check for ping API calls
-if (preg_match('/api\/ping/i', $requestUri)) {
+if (preg_match('/api[\/\-]?ping/i', $requestUri)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     
@@ -83,7 +88,7 @@ if (preg_match('/api\/ping/i', $requestUri)) {
     exit;
 }
 
-if (preg_match('/api\/users/i', $requestUri)) {
+if (preg_match('/api[\/\-]?users/i', $requestUri)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     $adHelper = new ADHelper();
@@ -91,7 +96,7 @@ if (preg_match('/api\/users/i', $requestUri)) {
     exit;
 }
 
-if (preg_match('/api\/computers/i', $requestUri)) {
+if (preg_match('/api[\/\-]?computers/i', $requestUri)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     $adHelper = new ADHelper();
