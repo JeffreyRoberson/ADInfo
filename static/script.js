@@ -102,6 +102,7 @@ class PingManager {
     constructor() {
         this.computerRows = new Map();
         this.basePath = this.getBasePath();
+        this.apiEndpoint = this.basePath + 'api.php';
     }
 
     getBasePath() {
@@ -130,6 +131,7 @@ class PingManager {
         });
 
         console.log(`[PingManager] Initialized with ${this.computerRows.size} computers`);
+        console.log(`[PingManager] API Endpoint: ${this.apiEndpoint}`);
 
         // Start pinging all computers
         this.pingAllComputers();
@@ -150,8 +152,8 @@ class PingManager {
             return;
         }
 
-        // Build API URL using base path
-        const apiUrl = `${this.basePath}api/ping?hostname=${encodeURIComponent(computerName)}`;
+        // Build API URL using dedicated api.php endpoint
+        const apiUrl = `${this.apiEndpoint}?action=ping&hostname=${encodeURIComponent(computerName)}`;
         console.log(`[PingManager] Pinging ${computerName} at ${apiUrl}`);
 
         fetch(apiUrl, {
@@ -216,6 +218,7 @@ class PingManager {
 class ClickPingManager {
     constructor(basePath) {
         this.basePath = basePath;
+        this.apiEndpoint = this.basePath + 'api.php';
         this.modal = document.getElementById('pingModal');
         this.closeBtn = document.querySelector('.close');
         this.init();
@@ -260,7 +263,7 @@ class ClickPingManager {
     }
 
     pingComputerDetailed(computerName) {
-        const apiUrl = `${this.basePath}api/ping-detailed?hostname=${encodeURIComponent(computerName)}`;
+        const apiUrl = `${this.apiEndpoint}?action=ping-detailed&hostname=${encodeURIComponent(computerName)}`;
         console.log(`[ClickPingManager] Requesting detailed ping: ${apiUrl}`);
 
         const modalBody = document.getElementById('modalBody');
@@ -276,6 +279,7 @@ class ClickPingManager {
             }
         })
         .then(response => {
+            console.log(`[ClickPingManager] Response status: ${response.status}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
