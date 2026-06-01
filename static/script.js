@@ -95,125 +95,9 @@ class TableManager {
 }
 
 /**
- * Server-side Ping Manager
- * Fetches ping status for all computers from the server
- */
-class PingManager {
-    constructor() {
-        this.computerRows = new Map();
-        this.basePath = this.getBasePath();
-        this.apiEndpoint = this.basePath + 'api.php';
-    }
-
-    getBasePath() {
-        // Get the pathname and extract the base directory
-        const pathname = window.location.pathname;
-        console.log(`[PingManager] Full pathname: ${pathname}`);
-        
-        // If pathname is /adinfo/index.php or /adinfo/, we want /adinfo/
-        const match = pathname.match(/^(.*?\/adinfo\/)/) || pathname.match(/^(.*?\/[^/]+\/?)$/);
-        const basePath = match ? match[1] : '/';
-        console.log(`[PingManager] Base path: ${basePath}`);
-        return basePath;
-    }
-
-    init() {
-        // Collect all computer rows
-        const computersTable = document.getElementById('computersTable');
-        if (!computersTable) return;
-
-        const rows = computersTable.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const computerName = row.getAttribute('data-computer-name');
-            if (computerName) {
-                this.computerRows.set(computerName, row);
-            }
-        });
-
-        console.log(`[PingManager] Initialized with ${this.computerRows.size} computers`);
-        console.log(`[PingManager] API Endpoint: ${this.apiEndpoint}`);
-
-        // Start pinging all computers
-        this.pingAllComputers();
-    }
-
-    pingAllComputers() {
-        console.log(`[PingManager] Starting ping checks for ${this.computerRows.size} computers`);
-        
-        this.computerRows.forEach((row, computerName) => {
-            this.pingHost(computerName, row);
-        });
-    }
-
-    pingHost(computerName, row) {
-        const statusCell = row.querySelector('.host-status-cell');
-        if (!statusCell) {
-            console.warn(`[PingManager] No status cell found for ${computerName}`);
-            return;
-        }
-
-        // Build API URL using dedicated api.php endpoint
-        const apiUrl = `${this.apiEndpoint}?action=ping&hostname=${encodeURIComponent(computerName)}`;
-        console.log(`[PingManager] Pinging ${computerName} at ${apiUrl}`);
-
-        fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-            }
-        })
-        .then(response => {
-            console.log(`[PingManager] Response status for ${computerName}: ${response.status}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log(`[PingManager] Ping result for ${computerName}:`, data);
-            if (data.success) {
-                this.updateStatusDisplay(row, statusCell, data);
-            } else {
-                this.updateStatusError(row, statusCell, data.error || 'Ping failed');
-            }
-        })
-        .catch(error => {
-            console.error(`[PingManager] Ping error for ${computerName}:`, error);
-            this.updateStatusError(row, statusCell, error.message);
-        });
-    }
-
-    updateStatusDisplay(row, statusCell, data) {
-        const isOnline = data.online || data.status === 'online';
-        const statusClass = isOnline ? 'online' : 'offline';
-        const statusIcon = isOnline ? '✓' : '✗';
-        const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
-        
-        // Update data attribute for sorting
-        row.setAttribute('data-online-status', statusText.toLowerCase());
-        
-        // Update status badge with cursor pointer
-        statusCell.innerHTML = `
-            <span class="status-badge ${statusClass}" style="cursor: pointer;" title="Click for details">${statusIcon} ${statusText}</span>
-        `;
-    }
-
-    updateStatusError(row, statusCell, errorMessage) {
-        // Update data attribute
-        row.setAttribute('data-online-status', 'error');
-        
-        // Update status badge
-        statusCell.innerHTML = `
-            <span class="status-badge error" title="${escapeHtml(errorMessage)}" style="cursor: pointer;">? ERROR</span>
-        `;
-    }
-}
-
-/**
  * Click-to-Ping Manager
  * Handles click events on computer names and status badges to show detailed ping info
+ * Only pings when user clicks - no automatic background pinging
  */
 class ClickPingManager {
     constructor(basePath) {
@@ -427,12 +311,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const usersManager = new TableManager('usersTable', 'userSearchInput');
     const computersManager = new TableManager('computersTable', 'computerSearchInput');
 
-    // Initialize server-side ping manager
-    const pingManager = new PingManager();
-    pingManager.init();
+    // Get base path for API calls
+    const pathname = window.location.pathname;
+    const match = pathname.match(/^(.*?\/adinfo\/)/) || pathname.match(/^(.*?\/[^/]+\/?)$/);
+    const basePath = match ? match[1] : '/';
 
-    // Initialize click-to-ping manager
-    clickPingManager = new ClickPingManager(pingManager.basePath);
+    // Initialize click-to-ping manager (only pings on click, no background pinging)
+    clickPingManager = new ClickPingManager(basePath);
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
