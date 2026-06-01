@@ -14,6 +14,38 @@ $logger = new Logger();
 // Check if this is an API request FIRST
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 
+// Check for detailed ping API calls
+if (preg_match('/api\/ping-detailed/i', $requestUri)) {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    
+    $hostname = $_GET['hostname'] ?? null;
+    $hostname = $hostname ? trim($hostname) : null;
+    
+    $logger->info('API PING-DETAILED: hostname=' . ($hostname ?: 'null'));
+    
+    if (!$hostname) {
+        http_response_code(400);
+        echo json_encode(['error' => 'hostname parameter required', 'success' => false]);
+        exit;
+    }
+    
+    try {
+        $pingHelper = new PingHelper($logger);
+        $result = $pingHelper->pingDetailed($hostname);
+        
+        echo json_encode($result);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'hostname' => $hostname,
+            'error' => $e->getMessage(),
+            'success' => false
+        ]);
+    }
+    exit;
+}
+
 // Check for ping API calls
 if (preg_match('/api\/ping/i', $requestUri)) {
     header('Content-Type: application/json');
