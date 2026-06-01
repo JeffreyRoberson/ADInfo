@@ -81,8 +81,8 @@ $computerCount = count($computers);
                                     data-never-expires="<?php echo $user['never_expires'] ? 'true' : 'false'; ?>"
                                     data-expiration-message="<?php echo htmlspecialchars((string)($user['expiration_message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                     data-is-disabled="<?php echo $user['is_disabled'] ? 'true' : 'false'; ?>">
-                                    <td class="account-name"><?php echo htmlspecialchars((string)($user['account_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><?php echo htmlspecialchars((string)($user['display_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td class="account-name <?php echo $user['is_disabled'] ? 'disabled' : ''; ?>"><?php echo htmlspecialchars((string)($user['account_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td class="display-name <?php echo $user['is_disabled'] ? 'disabled' : ''; ?>"><?php echo htmlspecialchars((string)($user['display_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?php echo htmlspecialchars((string)($user['last_logon'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?php echo htmlspecialchars((string)($user['pwd_last_set'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td class="text-center">
