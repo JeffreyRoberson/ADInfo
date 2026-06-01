@@ -192,9 +192,9 @@ class PingManager {
         // Update data attribute for sorting
         row.setAttribute('data-online-status', statusText.toLowerCase());
         
-        // Update status badge
+        // Update status badge with cursor pointer
         statusCell.innerHTML = `
-            <span class="status-badge ${statusClass}">${statusIcon} ${statusText}</span>
+            <span class="status-badge ${statusClass}" style="cursor: pointer;" title="Click for details">${statusIcon} ${statusText}</span>
         `;
     }
 
@@ -204,8 +204,207 @@ class PingManager {
         
         // Update status badge
         statusCell.innerHTML = `
-            <span class="status-badge error" title="${escapeHtml(errorMessage)}">? ERROR</span>
+            <span class="status-badge error" title="${escapeHtml(errorMessage)}" style="cursor: pointer;">? ERROR</span>
         `;
+    }
+}
+
+/**
+ * Click-to-Ping Manager
+ * Handles click events on computer names and status badges to show detailed ping info
+ */
+class ClickPingManager {
+    constructor(basePath) {
+        this.basePath = basePath;
+        this.modal = document.getElementById('pingModal');
+        this.closeBtn = document.querySelector('.close');
+        this.init();
+    }
+
+    init() {
+        // Set up close button
+        if (this.closeBtn) {
+            this.closeBtn.addEventListener('click', () => this.closeModal());
+        }
+
+        // Set up click handlers for computer names
+        document.addEventListener('click', (e) => {
+            const computerNameCell = e.target.closest('.clickable-computer');
+            if (computerNameCell) {
+                const computerName = computerNameCell.textContent.trim();
+                this.handleComputerClick(computerName);
+            }
+
+            // Also handle status badge clicks
+            const statusBadge = e.target.closest('.status-badge');
+            if (statusBadge && statusBadge.closest('#computersTable')) {
+                const row = statusBadge.closest('tr');
+                const computerName = row.getAttribute('data-computer-name');
+                this.handleComputerClick(computerName);
+            }
+        });
+
+        // Close modal when clicking outside of it
+        if (this.modal) {
+            window.addEventListener('click', (e) => {
+                if (e.target === this.modal) {
+                    this.closeModal();
+                }
+            });
+        }
+    }
+
+    handleComputerClick(computerName) {
+        console.log(`[ClickPingManager] Clicked on computer: ${computerName}`);
+        this.pingComputerDetailed(computerName);
+    }
+
+    pingComputerDetailed(computerName) {
+        const apiUrl = `${this.basePath}api/ping-detailed?hostname=${encodeURIComponent(computerName)}`;
+        console.log(`[ClickPingManager] Requesting detailed ping: ${apiUrl}`);
+
+        const modalBody = document.getElementById('modalBody');
+        if (modalBody) {
+            modalBody.innerHTML = '<p class="loading">🔄 Pinging ' + escapeHtml(computerName) + '...</p>';
+        }
+
+        fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`[ClickPingManager] Detailed ping result:`, data);
+            this.showPingResults(computerName, data);
+        })
+        .catch(error => {
+            console.error(`[ClickPingManager] Error:`, error);
+            this.showPingError(computerName, error.message);
+        });
+    }
+
+    showPingResults(computerName, data) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        if (modalTitle) {
+            modalTitle.textContent = `Ping Details: ${escapeHtml(computerName)}`;
+        }
+
+        if (modalBody) {
+            let html = '<div class="ping-details">';
+
+            if (data.success) {
+                const status = data.online ? 'ONLINE ✓' : 'OFFLINE ✗';
+                const statusClass = data.online ? 'online' : 'offline';
+                
+                html += `<div class="detail-row">
+                    <strong>Status:</strong>
+                    <span class="status-badge ${statusClass}">${status}</span>
+                </div>`;
+
+                if (data.response_time !== undefined) {
+                    html += `<div class="detail-row">
+                        <strong>Response Time:</strong>
+                        <span>${data.response_time}ms</span>
+                    </div>`;
+                }
+
+                if (data.ttl !== undefined) {
+                    html += `<div class="detail-row">
+                        <strong>TTL:</strong>
+                        <span>${data.ttl}</span>
+                    </div>`;
+                }
+
+                if (data.bytes !== undefined) {
+                    html += `<div class="detail-row">
+                        <strong>Bytes:</strong>
+                        <span>${data.bytes}</span>
+                    </div>`;
+                }
+
+                if (data.timestamp) {
+                    html += `<div class="detail-row">
+                        <strong>Timestamp:</strong>
+                        <span>${data.timestamp}</span>
+                    </div>`;
+                }
+
+                if (data.raw_output) {
+                    html += `<div class="detail-row full-width">
+                        <strong>Raw Output:</strong>
+                        <pre>${escapeHtml(data.raw_output)}</pre>
+                    </div>`;
+                }
+            } else {
+                html += `<div class="detail-row error">
+                    <strong>Error:</strong>
+                    <span>${escapeHtml(data.error || 'Ping failed')}</span>
+                </div>`;
+
+                if (data.raw_output) {
+                    html += `<div class="detail-row full-width">
+                        <strong>Output:</strong>
+                        <pre>${escapeHtml(data.raw_output)}</pre>
+                    </div>`;
+                }
+            }
+
+            html += `<div class="detail-row">
+                <button class="retry-btn" onclick="clickPingManager.pingComputerDetailed('${escapeHtml(computerName)}')">🔄 Retry Ping</button>
+            </div>`;
+
+            html += '</div>';
+            modalBody.innerHTML = html;
+        }
+
+        this.openModal();
+    }
+
+    showPingError(computerName, errorMessage) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        if (modalTitle) {
+            modalTitle.textContent = `Ping Details: ${escapeHtml(computerName)}`;
+        }
+
+        if (modalBody) {
+            modalBody.innerHTML = `
+                <div class="ping-details">
+                    <div class="detail-row error">
+                        <strong>Error:</strong>
+                        <span>${escapeHtml(errorMessage)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <button class="retry-btn" onclick="clickPingManager.pingComputerDetailed('${escapeHtml(computerName)}')">🔄 Retry Ping</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        this.openModal();
+    }
+
+    openModal() {
+        if (this.modal) {
+            this.modal.style.display = 'block';
+        }
+    }
+
+    closeModal() {
+        if (this.modal) {
+            this.modal.style.display = 'none';
+        }
     }
 }
 
@@ -214,6 +413,9 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Global reference to ClickPingManager for retry button
+let clickPingManager;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[App] Initializing');
@@ -224,6 +426,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize server-side ping manager
     const pingManager = new PingManager();
     pingManager.init();
+
+    // Initialize click-to-ping manager
+    clickPingManager = new ClickPingManager(pingManager.basePath);
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
