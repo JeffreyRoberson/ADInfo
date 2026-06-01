@@ -11,16 +11,24 @@ require_once 'includes/Logger.php';
 
 $logger = new Logger();
 
-// Get the request URI - handle both direct requests and rewritten requests
-$requestUri = $_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'] ?? '';
-if (!$requestUri && isset($_SERVER['QUERY_STRING'])) {
-    $requestUri = '/' . trim($_SERVER['QUERY_STRING'], '/');
+// Extract the request path from the URL
+// The .htaccess passes the original path as index.php?/api/ping
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+$pathInfo = isset($_SERVER['QUERY_STRING']) ? '/' . trim($_SERVER['QUERY_STRING'], '/?=&') : '';
+
+// If query string starts with a slash (from rewrite), use it
+if (!$pathInfo || empty($pathInfo) || $pathInfo === '/') {
+    $pathInfo = $requestUri;
 }
 
-$logger->debug('Request URI: ' . $requestUri);
+// Remove index.php from the path if present
+$pathInfo = str_replace('/index.php', '', $pathInfo);
 
-// Check for detailed ping API calls
-if (preg_match('/api[\/\-]?ping[\/\-]?detailed/i', $requestUri)) {
+$logger->debug('Request URI: ' . $requestUri);
+$logger->debug('Path Info: ' . $pathInfo);
+
+// Check for detailed ping API calls - must check this before regular ping
+if (preg_match('/api.*ping.*detailed/i', $pathInfo)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     
@@ -52,7 +60,7 @@ if (preg_match('/api[\/\-]?ping[\/\-]?detailed/i', $requestUri)) {
 }
 
 // Check for ping API calls
-if (preg_match('/api[\/\-]?ping/i', $requestUri)) {
+if (preg_match('/api.*ping/i', $pathInfo)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     
@@ -88,7 +96,7 @@ if (preg_match('/api[\/\-]?ping/i', $requestUri)) {
     exit;
 }
 
-if (preg_match('/api[\/\-]?users/i', $requestUri)) {
+if (preg_match('/api.*users/i', $pathInfo)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     $adHelper = new ADHelper();
@@ -96,7 +104,7 @@ if (preg_match('/api[\/\-]?users/i', $requestUri)) {
     exit;
 }
 
-if (preg_match('/api[\/\-]?computers/i', $requestUri)) {
+if (preg_match('/api.*computers/i', $pathInfo)) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     $adHelper = new ADHelper();
